@@ -10,6 +10,7 @@ from collections import defaultdict
 import re
 import copy
 import argparse
+import os
 
 class Config():
     def __init__(
@@ -153,7 +154,7 @@ def most_frequent(List):
     return num
 
 async def simple_test(config):
-    dataset = load_dataset(config.dataset_path, split=config.data_split)
+    dataset = load_dataset(config.dataset_path, 'main',  split=config.data_split)
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     diff_agents = set(config.llm)
     for agent in diff_agents:
@@ -183,7 +184,7 @@ async def simple_test(config):
     return generated_contexts, generated_description
 
 async def debate_test(config):
-    dataset = load_dataset(config.dataset_path, split=config.data_split)
+    dataset = load_dataset(config.dataset_path,'main',  split=config.data_split)
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     generated_contexts = {}
     generated_description = {}
@@ -230,7 +231,7 @@ async def chain_test(config):
     '''
         Implementation of interaction chain of LLM agents
     '''
-    dataset = load_dataset(config.dataset_path, split=config.data_split)
+    dataset = load_dataset(config.dataset_path,'main', split=config.data_split)
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     generated_contexts = {}
     generated_description = {}
@@ -322,10 +323,12 @@ async def main():
     parser.add_argument('--check_freq', type=int, default=50)
     parser.add_argument('--time_delay', type=int, default=5)
     parser.add_argument('--policy', type=str, default='simple_test', choices=['simple_test', 'debate_test', 'chain_test'])
-    parser.add_argument('--dataset_path', type=str, default='datasets\gsm8k\main')
+    parser.add_argument('--dataset_path', type=str, default='gsm8k')
+    parser.add_argument('--results_dir', type=str, default='results')
     args = parser.parse_args()
+    args.num_questions = [int(x) for x in args.num_questions]
     print(args)
-
+    os.makedirs(args.results_dir, exist_ok=True)
     contexts, description = await eval(args.policy)(args)
 
 if __name__ == '__main__':
