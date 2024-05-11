@@ -178,16 +178,16 @@ async def simple_test(config):
             generated_description[question] = (result, answer)
             if i > 0 and (i + 1) % config.check_freq == 0:
                 
-                json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, (config.num_questions[0], i + 1))), "w"))
+                json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, '_'.join(map(str, (config.num_questions[0], i + 1))))), "w"))
         if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-            json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, config.num_questions)), "w"))
+            json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, '_'.join(map(str, config.num_questions)))), "w"))
         contexts = {}
         for k, v in generated_contexts.items():
             context = []
             for conversation in v:
                 context.append(conversation.role + ": " + conversation.content)
             contexts[k] = '\n'.join(context)
-        json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, config.num_questions)), "w"))
+        json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, '_'.join(map(str, config.num_questions)))), "w"))
     return generated_contexts, generated_description
 
 async def debate_test(config):
@@ -222,9 +222,9 @@ async def debate_test(config):
             generated_description[question][agent_name] = generated_contexts[question][agent_name][-1].content
         generated_description[question]['answer'] = answer
         if i > 0 and (i + 1) % config.check_freq == 0:
-            json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds)), "w"))
+            json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}*{}_{}_{}_{}.json".format('_'.join(config.llm), config.num_agents, config.data_split, '_'.join(map(str, (config.num_questions[0], i + 1))), config.rounds)), "w"))
     if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-        json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
+        json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}*{}_{}_{}_{}.json".format('_'.join(config.llm), config.num_agents, config.data_split, '_'.join(map(str, config.num_questions)), config.rounds)), "w"))
     contexts = {}
     for k, v in generated_contexts.items():
         contexts[k] = {}
@@ -233,7 +233,7 @@ async def debate_test(config):
             for conversation in conversations:
                 context.append(conversation.role + ": " + conversation.content)
             contexts[k][agent] = '\n'.join(context)
-    json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
+    json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}*{}_{}_{}_{}.json".format('_'.join(config.llm), config.num_agents, config.data_split, '_'.join(map(str, config.num_questions)), config.rounds)), "w"))
     return generated_contexts, generated_description
 
 async def chain_test(config):
@@ -294,9 +294,9 @@ async def chain_test(config):
             generated_description[question][agent_name] = generated_contexts[question][agent_name][-1].content
         generated_description[question]['answer'] = answer
         if i > 0 and (i + 1) % config.check_freq == 0:
-            json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds)), "w"))
+            json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}>{}_{}_{}_{}.json".format('_'.join(config.llm), config.num_agents, config.data_split, '_'.join(map(str, (config.num_questions[0], i + 1))), config.rounds)), "w"))
     if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-        json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
+        json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}>{}_{}_{}_{}.json".format('_'.join(config.llm), config.num_agents, config.data_split, '_'.join(map(str, config.num_questions)), config.rounds)), "w"))
     contexts = {}
     for k, v in generated_contexts.items():
         contexts[k] = {}
@@ -305,7 +305,7 @@ async def chain_test(config):
             for conversation in conversations:
                 context.append(conversation.role + ": " + conversation.content)
             contexts[k][agent] = '\n'.join(context)
-    json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
+    json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}>{}_{}_{}_{}.json".format('_'.join(config.llm), config.num_agents, config.data_split, '_'.join(map(str, config.num_questions)), config.rounds)), "w"))
     return generated_contexts, generated_description
 
 
