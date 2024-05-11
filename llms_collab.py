@@ -58,18 +58,21 @@ def prepare_prompt(messages):
     return prompt
 
 # Create an asynchronous function to encapsulate the async for loop
-def get_responses(api_key, messages, bot_name, tries=10):
-    cnt = 0
+def get_responses(api_key, messages, bot_name, tries=10, time_delay=5):
+    # cnt = 0
     result = None
-    while cnt < tries:
-        try:
-            result = fp.get_final_response(request=messages, bot_name=bot_name, api_key=api_key, retry_sleep_time=60)
-            break
-        except fp.BotError as e:
-            print("Caught BotError exception:", e)
-            time.sleep(60)
-            # Handle the exception here
-        cnt += 1
+    time.sleep(time_delay)
+    result = fp.get_final_response(request=messages, bot_name=bot_name, api_key=api_key, num_tries = tries, retry_sleep_time=60)
+    # while cnt < tries:
+    #     try:
+    #         time.sleep(time_delay)
+    #         result = fp.get_final_response(request=messages, bot_name=bot_name, api_key=api_key, num_tries = tries, retry_sleep_time=60)
+    #         break
+    #     except fp.BotError as e:
+    #         print("Caught BotError exception:", e)
+    #         time.sleep(60)
+    #         # Handle the exception here
+    #     cnt += 1
     return result
 
 
@@ -157,6 +160,10 @@ async def simple_test(config):
     dataset = load_dataset(config.dataset_path, 'main',  split=config.data_split)
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     diff_agents = set(config.llm)
+    mid_answer_dir = os.join.path(args.results_dir, 'answers')
+    os.makedirs(mid_answer_dir, exist_ok=True)
+    contexts_dir = os.join.path(args.results_dir, 'contexts')
+    os.makedirs(contexts_dir, exist_ok=True)
     for agent in diff_agents:
         generated_contexts = defaultdict(list)
         generated_description = {}
@@ -166,21 +173,21 @@ async def simple_test(config):
             answer = data['answer']
             generated_contexts[question].append(fp.ProtocolMessage(role="user", content=contexts_prefix.format(question)))
             prompt = prepare_prompt(generated_contexts[question])
-            response = get_responses(config.api_key, prompt, agent)
-            time.sleep(config.time_delay)
+            response = get_responses(config.api_key, prompt, agent, time_delay=config.time_delay)
             result = await response
             generated_description[question] = (result, answer)
             if i > 0 and (i + 1) % config.check_freq == 0:
-                json.dump(generated_description, open("results/answers/gsm_{}_{}_{}.json".format(agent, config.data_split, (config.num_questions[0], i + 1)), "w"))
+                
+                json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, (config.num_questions[0], i + 1))), "w"))
         if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-            json.dump(generated_description, open("results/gsm_{}_{}_{}.json".format(agent, config.data_split, config.num_questions), "w"))
+            json.dump(generated_description, open(os.path.join(args.results_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, config.num_questions)), "w"))
         contexts = {}
         for k, v in generated_contexts.items():
             context = []
             for conversation in v:
                 context.append(conversation.role + ": " + conversation.content)
             contexts[k] = '\n'.join(context)
-        json.dump(contexts, open("results/contexts/gsm_{}_{}_{}.json".format(agent, config.data_split, config.num_questions), "w"))
+        json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}_{}_{}.json".format(agent, config.data_split, config.num_questions)), "w"))
     return generated_contexts, generated_description
 
 async def debate_test(config):
@@ -188,7 +195,10 @@ async def debate_test(config):
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     generated_contexts = {}
     generated_description = {}
-
+    mid_answer_dir = os.join.path(args.results_dir, 'answers')
+    os.makedirs(mid_answer_dir, exist_ok=True)
+    contexts_dir = os.join.path(args.results_dir, 'contexts')
+    os.makedirs(contexts_dir, exist_ok=True)
     for i, data in enumerate(tqdm(dataset)):
         question = data['question']
         answer = data['answer']
@@ -204,8 +214,7 @@ async def debate_test(config):
                     round_prompt = fp.ProtocolMessage(role="user", content=prompt)
                 generated_contexts[question][agent_name].append(round_prompt)
                 prompt = prepare_prompt(generated_contexts[question][agent_name])
-                response = get_responses(config.api_key, prompt, agent)
-                time.sleep(config.time_delay)
+                response = get_responses(config.api_key, prompt, agent, time_delay=config.time_delay)
                 result = await response
                 generated_contexts[question][agent_name].append(fp.ProtocolMessage(role="bot", content=result))
         for j, agent in enumerate(config.llm):
@@ -213,9 +222,9 @@ async def debate_test(config):
             generated_description[question][agent_name] = generated_contexts[question][agent_name][-1].content
         generated_description[question]['answer'] = answer
         if i > 0 and (i + 1) % config.check_freq == 0:
-            json.dump(generated_description, open("results/answers/gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds), "w"))
+            json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds)), "w"))
     if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-        json.dump(generated_description, open("results/gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds), "w"))
+        json.dump(generated_description, open(os.path.join(args.results_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
     contexts = {}
     for k, v in generated_contexts.items():
         contexts[k] = {}
@@ -224,7 +233,7 @@ async def debate_test(config):
             for conversation in conversations:
                 context.append(conversation.role + ": " + conversation.content)
             contexts[k][agent] = '\n'.join(context)
-    json.dump(contexts, open("results/contexts/gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds), "w"))
+    json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
     return generated_contexts, generated_description
 
 async def chain_test(config):
@@ -235,7 +244,10 @@ async def chain_test(config):
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     generated_contexts = {}
     generated_description = {}
-
+    mid_answer_dir = os.join.path(args.results_dir, 'answers')
+    os.makedirs(mid_answer_dir, exist_ok=True)
+    contexts_dir = os.join.path(args.results_dir, 'contexts')
+    os.makedirs(contexts_dir, exist_ok=True)
     for i, data in enumerate(tqdm(dataset)):
         question = data['question']
         answer = data['answer']
@@ -255,8 +267,7 @@ async def chain_test(config):
                     teacher_prompt = fp.ProtocolMessage(role="user", content=teacher_contexts_suffix.format(generated_contexts[question][student_agent][-1].content))
                 generated_contexts[question][teacher_agent].append(teacher_prompt)
                 prompt = prepare_prompt(generated_contexts[question][teacher_agent])
-                response = get_responses(config.api_key, prompt, teacher)
-                time.sleep(config.time_delay)
+                response = get_responses(config.api_key, prompt, teacher, time_delay=config.time_delay)
                 result = await response
                 generated_contexts[question][teacher_agent].append(fp.ProtocolMessage(role="bot", content=result))
 
@@ -266,15 +277,14 @@ async def chain_test(config):
                     student_prompt = fp.ProtocolMessage(role="user", content=student_contexts_suffix.format(generated_contexts[question][teacher_agent][-1].content))
                 generated_contexts[question][student_agent].append(student_prompt)
                 prompt = prepare_prompt(generated_contexts[question][student_agent])
-                response = get_responses(config.api_key, prompt, student)
-                time.sleep(config.time_delay)
+                response = get_responses(config.api_key, prompt, student, time_delay=config.time_delay)
                 result = await response
                 generated_contexts[question][student_agent].append(fp.ProtocolMessage(role="bot", content=result))
 
             teacher_prompt = fp.ProtocolMessage(role="user", content=teacher_contexts_suffix.format(generated_contexts[question][student_agent][-1].content))
             generated_contexts[question][teacher_agent].append(teacher_prompt)
             prompt = prepare_prompt(generated_contexts[question][teacher_agent])
-            response = get_responses(config.api_key, prompt, teacher)
+            response = get_responses(config.api_key, prompt, teacher, time_delay=config.time_delay)
             time.sleep(config.time_delay)
             result = await response
             generated_contexts[question][teacher_agent].append(fp.ProtocolMessage(role="bot", content=result))
@@ -284,9 +294,9 @@ async def chain_test(config):
             generated_description[question][agent_name] = generated_contexts[question][agent_name][-1].content
         generated_description[question]['answer'] = answer
         if i > 0 and (i + 1) % config.check_freq == 0:
-            json.dump(generated_description, open("results/answers/gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds), "w"))
+            json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds)), "w"))
     if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-        json.dump(generated_description, open("results/gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds), "w"))
+        json.dump(generated_description, open(os.path.join(args.results_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
     contexts = {}
     for k, v in generated_contexts.items():
         contexts[k] = {}
@@ -295,7 +305,7 @@ async def chain_test(config):
             for conversation in conversations:
                 context.append(conversation.role + ": " + conversation.content)
             contexts[k][agent] = '\n'.join(context)
-    json.dump(contexts, open("results/contexts/gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds), "w"))
+    json.dump(contexts, open(os.path.join(contexts_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
     return generated_contexts, generated_description
 
 
