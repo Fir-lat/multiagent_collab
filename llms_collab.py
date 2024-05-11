@@ -322,7 +322,7 @@ async def main():
     parser.add_argument('--check_freq', type=int, default=50)
     parser.add_argument('--time_delay', type=int, default=5)
     parser.add_argument('--policy', type=str, default='simple_test', choices=['simple_test', 'debate_test', 'chain_test'])
-    parser.add_argument('--dataset_path', type=str, default='datasets/gsm8k/main')
+    parser.add_argument('--dataset_path', type=str, default='datasets\gsm8k\main')
     args = parser.parse_args()
     print(args)
 
