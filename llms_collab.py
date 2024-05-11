@@ -195,9 +195,9 @@ async def debate_test(config):
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     generated_contexts = {}
     generated_description = {}
-    mid_answer_dir = os.path.join(args.results_dir, 'answers')
+    mid_answer_dir = os.path.join(config.results_dir, 'answers')
     os.makedirs(mid_answer_dir, exist_ok=True)
-    contexts_dir = os.path.join(args.results_dir, 'contexts')
+    contexts_dir = os.path.join(config.results_dir, 'contexts')
     os.makedirs(contexts_dir, exist_ok=True)
     for i, data in enumerate(tqdm(dataset)):
         question = data['question']
@@ -224,7 +224,7 @@ async def debate_test(config):
         if i > 0 and (i + 1) % config.check_freq == 0:
             json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds)), "w"))
     if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-        json.dump(generated_description, open(os.path.join(args.results_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
+        json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}*{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
     contexts = {}
     for k, v in generated_contexts.items():
         contexts[k] = {}
@@ -244,9 +244,9 @@ async def chain_test(config):
     dataset = dataset.select(range(config.num_questions[0], config.num_questions[1]))
     generated_contexts = {}
     generated_description = {}
-    mid_answer_dir = os.path.join(args.results_dir, 'answers')
+    mid_answer_dir = os.path.join(config.results_dir, 'answers')
     os.makedirs(mid_answer_dir, exist_ok=True)
-    contexts_dir = os.path.join(args.results_dir, 'contexts')
+    contexts_dir = os.path.join(config.results_dir, 'contexts')
     os.makedirs(contexts_dir, exist_ok=True)
     for i, data in enumerate(tqdm(dataset)):
         question = data['question']
@@ -296,7 +296,7 @@ async def chain_test(config):
         if i > 0 and (i + 1) % config.check_freq == 0:
             json.dump(generated_description, open(os.path.join(mid_answer_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, (config.num_questions[0], i + 1), config.rounds)), "w"))
     if config.num_questions[1] - config.num_questions[0] % config.check_freq != 0:
-        json.dump(generated_description, open(os.path.join(args.results_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
+        json.dump(generated_description, open(os.path.join(config.results_dir, "gsm_{}>{}_{}_{}_{}.json".format(config.llm, config.num_agents, config.data_split, config.num_questions, config.rounds)), "w"))
     contexts = {}
     for k, v in generated_contexts.items():
         contexts[k] = {}
