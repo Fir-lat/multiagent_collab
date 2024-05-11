@@ -321,13 +321,13 @@ async def main():
     parser.add_argument('--api_key', type=str, default='5aXs7ujR_JNNHegHuz6wIdztbfNrhJO21ArVaY3p_Ow')
     parser.add_argument('--check_freq', type=int, default=50)
     parser.add_argument('--time_delay', type=int, default=5)
-    parser.add_argument('--policy', typpe=str, default='simple_test', choices=['simple_test', 'debate_test', 'chain_test'])
+    parser.add_argument('--policy', type=str, default='simple_test', choices=['simple_test', 'debate_test', 'chain_test'])
     args = parser.parse_args()
     print(args)
 
     contexts, description = await eval(args.policy)(args)
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
 
 # choos from ['Mixtral-8x7b-Groq', 'Gemini-1.0-Pro', 'GPT-3.5-Turbo', 'Qwen-72b-Chat', 'Claude-instant', 'CodeLlama-70B-T']
