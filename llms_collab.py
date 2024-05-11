@@ -9,6 +9,7 @@ import numpy as np
 from collections import defaultdict
 import re
 import copy
+import argparse
 
 class Config():
     def __init__(
@@ -298,20 +299,35 @@ async def chain_test(config):
 
 
 async def main():
-    config1 = Config(
-        data_split='test',
-        num_questions=(0, 500),
-        batch_size=1,
-        llm=['Gemini-1.0-Pro', 'GPT-3.5-Turbo', 'Qwen-72b-Chat'], # Qwen-72b-Chat
-        dataset_path='datasets/gsm8k/main',
-        num_agents=3,
-        rounds=2,
-        api_key='ab9MG8v8wwwilE1DBM4EIHA1pffo-N9Bru0LCJ7B_zo',
-        check_freq=10,
-        time_delay=5
-    )
+    # config1 = Config(
+    #     data_split='test',
+    #     num_questions=(0, 500),
+    #     batch_size=1,
+    #     llm=['Gemini-1.0-Pro', 'GPT-3.5-Turbo', 'Qwen-72b-Chat'], # Qwen-72b-Chat
+    #     dataset_path='datasets/gsm8k/main',
+    #     num_agents=3,
+    #     rounds=2,
+    #     api_key='ab9MG8v8wwwilE1DBM4EIHA1pffo-N9Bru0LCJ7B_zo',
+    #     check_freq=10,
+    #     time_delay=5
+    # )
+    parser = argparse.ArgumentParser(description='General Inference Pipeline')
+    parser.add_argument('--data_split', type=str, default='test', choices=['test', 'train'])
+    parser.add_argument('--num_questions', nargs='+', default=[0, 500])
+    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--llm', nargs='+', default=['Gemini-1.0-Pro', 'GPT-3.5-Turbo', 'Mixtral-8x7b-Groq'])
+    parser.add_argument('--rounds', type=int, default=2)
+    parser.add_argument('--num_agents', type=int, default=3)
+    parser.add_argument('--api_key', type=str, default='5aXs7ujR_JNNHegHuz6wIdztbfNrhJO21ArVaY3p_Ow')
+    parser.add_argument('--check_freq', type=int, default=50)
+    parser.add_argument('--time_delay', type=int, default=5)
+    parser.add_argument('--policy', typpe=str, default='simple_test', choices=['simple_test', 'debate_test', 'chain_test'])
+    args = parser.parse_args()
+    print(args)
 
-    contexts, description = await simple_test(config1)
+    contexts, description = await eval(args.policy)(args)
 
 if __name__ == '__main__':
     main()
+
+# choos from ['Mixtral-8x7b-Groq', 'Gemini-1.0-Pro', 'GPT-3.5-Turbo', 'Qwen-72b-Chat', 'Claude-instant', 'CodeLlama-70B-T']
